@@ -1,0 +1,6 @@
+{
+  "name": "VoyagerIQ",
+  "description": "Premium AI-Driven Travel Concierge",
+  "requestFramePermissions": ["geolocation", "camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
