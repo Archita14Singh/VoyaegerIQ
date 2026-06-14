@@ -1,20 +1,135 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# VoyagerIQ - Enterprise AI Travel Assistant
 
-# Run and deploy your AI Studio app
+VoyagerIQ is a premium, high-integrity AI-powered Travel Concierge and Expense Management platform custom-designed for enterprise travelers. It provides a highly polished, responsive interface for managing travel schedules, tracking flights, analyzing expense logs, and performing real-time transaction receipts analysis.
 
-This contains everything you need to run your app locally.
+The entire ecosystem is optimized for **Azure** cloud hosting services, integrating seamlessly with **Azure AI Foundry (Agent Service)** for contextual, secure AI chat assistance and receipt scanning.
 
-View your app in AI Studio: https://ai.studio/apps/0565cc12-76e8-4983-a03a-3a156a25f7d8
+---
 
-## Run Locally
+## 🏗 System Architecture & Technology Stack
 
-**Prerequisites:**  Node.js
+VoyagerIQ is built as a complete full-stack environment consisting of two main parts:
 
+### 1. Unified Web Client & Host (`/` Root Workspace)
+- **Frontend Framework:** React 19 + TypeScript + Vite.
+- **Styling & Animations:** Tailwind CSS v4, Lucide React icons, and `motion` (by Framer) for elegant physical layouts.
+- **Host Server:** Express.js Node.js server proxying client asset streams and API requests securely (CORS safe).
+- **Primary AI Gateway:** Connects to **Azure AI Foundry Beta Agent Service** using camelCase/snake_case SDK bindings (`@azure/ai-projects` and `@azure/core-auth`).
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### 2. Microservice Backend (`/project` Directory)
+- **Framework:** Asynchronous FastAPI (high-concurrency request routing).
+- **AI Agent Host:** Seamless interface with Azure AI Foundry agents (GPT-4 configuration models, Azure AI Search index data grounding, web lookup).
+- **Persistent Ledger:** SQLAlchemy 2.0 ORM with asynchronous drivers (`aiosqlite`) to maintain real-time transaction ledgers over local/shared SQLite storage databases.
+
+---
+
+## 📂 Repository Structure
+
+```text
+voyageriq/
+├── .github/workflows/
+│   └── azure-deploy.yml     # Automated Docker push & Azure Container Apps deployment
+├── project/                 # Modular Python FastAPI Microservice
+│   ├── app/
+│   │   ├── routes/          # REST endpoints (chat, expense ledger, travel planning)
+│   │   ├── services/        # Business logic rules & active Azure Foundry adapters
+│   │   ├── models/          # Consistent Pydantic request & database objects
+│   │   └── database/        # Async SQLAlchemy sqlite initialization
+│   ├── requirements.txt     # Python backend dependencies
+│   └── README.md            # Detailed FastAPI guide and cURL testing sequences
+├── src/                     # React modern UI files
+├── server.ts                # Express asset server and production-grade API routing
+├── Dockerfile               # Enterprise Docker runtime runner (production optimized)
+├── package.json             # Web client scripts and Node package bindings
+└── README.md                # (This file) Master system deployment guide
+```
+
+---
+
+## ⚙️ Local Configuration & Services
+
+Setup files can be configured to bind both services smoothly.
+
+### 1. Web Application Env Settings (`/.env`)
+Copy the template at `/.env.example` to `/.env` and update configuration properties:
+```env
+# Application Host Endpoint
+APP_URL="http://localhost:3000"
+
+# Microsoft Azure AI Foundry Agent Service Configurations
+FOUNDRY_PROJECT_ENDPOINT="https://<your-project-workspace>.<region>.projects.azure.ai"
+FOUNDRY_AGENT_NAME="your-agent-deployment-name"
+FOUNDRY_AGENT_VERSION="1.0"
+FOUNDRY_ISOLATION_KEY="your-azure-foundry-api-credential-key"
+```
+
+### 2. FastAPI Backend Settings (`/project/.env`)
+Configure database pathing and Azure connections inside `/project/.env`:
+```env
+HOST=0.0.0.0
+PORT=8000
+DEBUG=True
+
+FOUNDRY_PROJECT_ENDPOINT="https://<your-project-workspace>.<region>.projects.azure.ai"
+FOUNDRY_AGENT_ID="your-agent-id-or-deployment-name"
+FOUNDRY_AGENT_NAME="your-agent-name"
+FOUNDRY_AGENT_VERSION="1.0"
+FOUNDRY_ISOLATION_KEY="your-azure-foundry-api-credential-key"
+FOUNDRY_API_KEY="your-foundry-api-key"
+
+DATABASE_URL=sqlite+aiosqlite:///./voyageriq_mvp.db
+```
+
+---
+
+## 🚀 Running the Application Local Servers
+
+To boot up the active development stack locally:
+
+### Launching the Frontend Client & Proxy Host:
+From the root directory (`/`), run:
+```bash
+# Install NPM dependencies
+npm install
+
+# Start the Express and Vite dev servers
+npm run dev
+```
+The active VoyagerIQ portal is now hosted live at `http://localhost:3000`.
+
+### Launching the FastAPI Service:
+Open a secondary terminal inside `/project` and run:
+```bash
+# Install Python virtual environment dependencies
+pip install -r requirements.txt
+
+# Run the live Uvicorn HTTP loop
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+View FastAPI's autogenerated Swagger interface documentation directly at `http://localhost:8000/docs`.
+
+---
+
+## 📦 Containerization & Deployment
+
+VoyagerIQ is built production-ready with full support for containerization and automated CI/CD:
+
+### 1. Running via Docker
+A multi-stage standard `Dockerfile` compiles the Vite static bundle and serves the Express application using a secure, lightweight Alpine Node runtime.
+To build and run:
+```bash
+docker build -t voyageriq:latest .
+docker run -p 3000:3000 voyageriq:latest
+```
+
+### 2. Deploying to Azure Container Apps (GitHub Actions)
+The included GitHub Actions workflow (`/.github/workflows/azure-deploy.yml`) handles compiling the code, pushing it securely to your **Azure Container Registry (ACR)**, and deploying the fresh build to **Azure Container Apps (ACA)**.
+
+To activate, add the following target secrets to your GitHub Repository Settings under **Actions Secrets**:
+* `AZURE_CREDENTIALS` (Azure CLI Service Principal Login JSON)
+* `ACR_LOGIN_SERVER` (e.g. `myregistry.azurecr.io`)
+* `ACR_USERNAME` (Registry Admin Username)
+* `ACR_PASSWORD` (Registry Admin Access Password)
+* `ACR_NAME` (Registry Instance Name)
+* `ACA_APP_NAME` (Target Azure Container App Service Name)
+* `ACA_RESOURCE_GROUP` (Target resource group name)
